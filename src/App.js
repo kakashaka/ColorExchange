@@ -13,7 +13,7 @@ const styles = reactCSS({
       borderRadius: "4px",
       boxShadow: "0 0 0 1px rgba(0,0,0,.25), 0 8px 16px rgba(0,0,0,.15)",
       boxSizing: "initial",
-      width: "513px",
+      width: "420px",
     },
     head: {
       backgroundImage: "linear-gradient(-180deg, #F0F0F0 0%, #D4D4D4 100%)",
@@ -63,10 +63,16 @@ const styles = reactCSS({
     },
   },
 });
-
+function clone(setObj, obj, property) {
+  return (event) => {
+    setObj({ ...obj, [property]: Number(event.target.value) });
+  };
+}
 function App() {
-  const [hsl, setHSL] = useState({ h: 0, s: 0, l: 0});
-  const [hsv, setHSV] = useState({ h: 0, s: 0, v: 0});
+  const [hsl, setHSL] = useState({ h: 0, s: 0, l: 0 });
+  const [hsv, setHSV] = useState({ h: 0, s: 0, v: 0 });
+  const [cssColor, setCssColor] = useState();
+  // useEffect(() => {const s = });
 
   useEffect(() => {
     console.log(hsl);
@@ -78,7 +84,6 @@ function App() {
   return (
     <div style={styles.picker} className={`photoshop-picker`}>
       <div style={styles.head}>Header</div>
-
       <div style={styles.body} className="flexbox-fix">
         <div style={styles.saturation}>
           <Saturation
@@ -90,6 +95,35 @@ function App() {
         </div>
         <div style={styles.hue}>
           <Hue direction="vertical" hsl={hsl} onChange={setHSL} />
+        </div>
+        <div
+          className="show__color"
+          style={{ backgroundColor: "green", boxShadow: "0 0 20px green" }}
+        >
+          {" "}
+        </div>
+        <div className="HSL">
+          HSL: H:
+          <input
+            type="text"
+            size="8"
+            value={hsl.h}
+            onChange={clone(setHSL, hsl, "h")}
+          ></input>
+          S:
+          <input
+            type="text"
+            size="8"
+            value={hsl.s}
+            onChange={clone(setHSL, hsl, "s")}
+          ></input>
+          L:
+          <input
+            type="text"
+            size="8"
+            value={hsl.l}
+            onChange={clone(setHSL, hsl, "l")}
+          ></input>
         </div>
       </div>
     </div>
