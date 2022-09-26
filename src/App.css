@@ -40,12 +40,12 @@
   position: relative;
   height: 500px;
 }
-.HSL {
+.HSV {
   position: absolute;
   bottom: 180px;
   font-size: 20px;
 }
-.HSL input {
+.HSV input {
   height: 15px;
   margin-left: 5px;
   margin-right: 5px;
@@ -90,3 +90,13 @@
   top: 0;
   left: -31px;
 }   
+.HSL {
+  position: absolute;
+  bottom: 150px;
+  font-size: 20px;
+}
+.HSL input {
+  height: 15px;
+  margin-left: 5px;
+  margin-right: 5px;
+}

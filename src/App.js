@@ -75,17 +75,76 @@ function hsvToHsl(hsv) {
   const s = m ? (hsv.v - l) / m : 0;
   return { h: hsv.h, s: s, l: l };
 }
+
+function HSVInputs(props) {
+  return (
+    <div className="HSV">
+      HSV: H:
+      <input
+        type="text"
+        size="8"
+        value={props.hsv.h}
+        onChange={clone(props.setHSV, props.hsv, "h")}
+      ></input>
+      S:
+      <input
+        type="text"
+        size="8"
+        value={props.hsv.s}
+        onChange={clone(props.setHSV, props.hsv, "s")}
+      ></input>
+      V:
+      <input
+        type="text"
+        size="8"
+        value={props.hsv.v}
+        onChange={clone(props.setHSV, props.hsv, "v")}
+      ></input>
+    </div>
+  );
+}
+function hslToHsv(hsl) {
+  const v = hsl.s * Math.min(hsl.l, 1 - hsl.l) + hsl.l;
+  const s = v ? 2 - (2 * hsl.l) / v : 0;
+  return { h:hsl.h, s, v };
+}
+function HSLInputs(props) {
+  const [hsl, setHSL] = useState(hsvToHsl(props.hsv));
+  useEffect(() => {
+    props.setHSV(hslToHsv(hsl));
+  }, [hsl]);
+  return (
+    <div className="HSL">
+      HSL: H:
+      <input
+        type="text"
+        size="8"
+        value={hsl.h}
+        onChange={clone(setHSL, hsl, "h")}
+      ></input>
+      S:
+      <input
+        type="text"
+        size="8"
+        value={hsl.s}
+        onChange={clone(setHSL, hsl, "s")}
+      ></input>
+      L:
+      <input
+        type="text"
+        size="8"
+        value={hsl.l}
+        onChange={clone(setHSL, hsl, "l")}
+      ></input>
+    </div>
+  );
+}
 function App() {
   const [hsv, setHSV] = useState({ h: 298, s: 0.5, v: 1 });
   const [hsl, setHSL] = useState(hsvToHsl(hsv));
   const [hueHSL, setHueHSL] = useState(hsl);
   const [cssColor, setCssColor] = useState("white");
 
-  useEffect(() => {
-    setTimeout(() => {
-      setHSV({ ...hsv });
-    }, 0);
-  }, []);
   useEffect(() => {
     setHSL(hsvToHsl(hsv));
   }, [hsv]);
@@ -136,29 +195,9 @@ function App() {
           />
         </div>
         <div className="heart"> </div>
-        <div className="HSL">
-          HSV: H:
-          <input
-            type="text"
-            size="8"
-            value={hsv.h}
-            onChange={clone(setHSV, hsv, "h")}
-          ></input>
-          S:
-          <input
-            type="text"
-            size="8"
-            value={String(hsv.s)}
-            onChange={clone(setHSV, hsv, "s")}
-          ></input>
-          V:
-          <input
-            type="text"
-            size="8"
-            value={hsv.v}
-            onChange={clone(setHSV, hsv, "v")}
-          ></input>
-        </div>
+        <HSVInputs hsv={hsv} setHSV={setHSV}/>
+        <HSLInputs hsv={hsv} setHSV={setHSV}/>
+        
       </div>
     </div>
   );
