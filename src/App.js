@@ -5,6 +5,7 @@ import { ColorWrap, Saturation, Hue } from "react-color/lib/components/common";
 import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/PhotoshopPointerCircle";
 import { useEffect, useState } from "react";
 import { PhotoshopPicker } from "react-color";
+import Style from "style-it";
 
 const styles = reactCSS({
   default: {
@@ -13,7 +14,7 @@ const styles = reactCSS({
       borderRadius: "4px",
       boxShadow: "0 0 0 1px rgba(0,0,0,.25), 0 8px 16px rgba(0,0,0,.15)",
       boxSizing: "initial",
-      width: "420px",
+      width: "440px",
     },
     head: {
       backgroundImage: "linear-gradient(-180deg, #F0F0F0 0%, #D4D4D4 100%)",
@@ -69,11 +70,27 @@ function clone(setObj, obj, property) {
   };
 }
 function App() {
-  const [hsl, setHSL] = useState({ h: 0, s: 0, l: 0 });
+  const initHSL = { h: 299.53125, s: 1, l: 0.75716 };
+  const [hueHSL, setHueHSL] = useState(initHSL);
   const [hsv, setHSV] = useState({ h: 0, s: 0, v: 0 });
-  const [cssColor, setCssColor] = useState();
-  // useEffect(() => {const s = });
-
+  const [cssColor, setCssColor] = useState("white");
+  const [hsl, setHSL] = useState(initHSL);
+  useEffect(() => {
+    setTimeout(() => {
+      setHSV({ ...hsv });
+    }, 0);
+  }, []);
+  useEffect(() => {
+    const l = hsv.v - (hsv.v * hsv.s) / 2;
+    const m = Math.min(l, 1 - l);
+    const s = m ? (hsv.v - l) / m : 0;
+    setHSL({ h: hsv.h, s: s, l: l });
+  }, [hsv]);
+  useEffect(() => {
+    const s = hsl.s * 100;
+    const l = hsl.l * 100;
+    setCssColor(`hsl(${hsl.h},${s}%,${l}%)`);
+  }, [hsv]);
   useEffect(() => {
     console.log(hsl);
   }, [hsl]);
@@ -83,46 +100,61 @@ function App() {
 
   return (
     <div style={styles.picker} className={`photoshop-picker`}>
+      <Style>
+        {`  
+          .heart::before, .heart::after { 
+            background-color: ${cssColor};
+            box-shadow: 0px 0px 20px ${cssColor}
+          }
+          .heart {
+            background-color: ${cssColor};
+            box-shadow: 0px 0px 20px ${cssColor}
+          }
+        `}
+      </Style>
       <div style={styles.head}>Header</div>
       <div style={styles.body} className="flexbox-fix">
         <div style={styles.saturation}>
           <Saturation
-            hsl={hsl}
+            hsl={hueHSL}
             hsv={hsv}
             pointer={PhotoshopPointerCircle}
             onChange={setHSV}
           />
         </div>
         <div style={styles.hue}>
-          <Hue direction="vertical" hsl={hsl} onChange={setHSL} />
+          <Hue
+            direction="vertical"
+            hsl={hueHSL}
+            onChange={(newHueHSL) => {
+              setHueHSL(newHueHSL);
+              setHSV({ ...hsv, h: newHueHSL.h });
+            }}
+          />
         </div>
-        <div
-          className="show__color"
-          style={{ backgroundColor: "green", boxShadow: "0 0 20px green" }}
-        >
-          {" "}
-        </div>
+        <div className="heart"> </div>
         <div className="HSL">
-          HSL: H:
+          HSV: H:
           <input
+            defaultValue={String(hsv.v)}
             type="text"
             size="8"
-            value={hsl.h}
-            onChange={clone(setHSL, hsl, "h")}
+            value={hsv.h}
+            onChange={clone(setHSV, hsv, "h")}
           ></input>
           S:
           <input
             type="text"
             size="8"
-            value={hsl.s}
-            onChange={clone(setHSL, hsl, "s")}
+            value={String(hsv.s)}
+            onChange={clone(setHSV, hsv, "s")}
           ></input>
-          L:
+          V:
           <input
             type="text"
             size="8"
-            value={hsl.l}
-            onChange={clone(setHSL, hsl, "l")}
+            value={hsl.v}
+            onChange={clone(setHSV, hsv, "v")}
           ></input>
         </div>
       </div>
