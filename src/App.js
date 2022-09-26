@@ -69,22 +69,25 @@ function clone(setObj, obj, property) {
     setObj({ ...obj, [property]: Number(event.target.value) });
   };
 }
+function hsvToHsl(hsv) {
+  const l = hsv.v - (hsv.v * hsv.s) / 2;
+  const m = Math.min(l, 1 - l);
+  const s = m ? (hsv.v - l) / m : 0;
+  return { h: hsv.h, s: s, l: l };
+}
 function App() {
-  const initHSL = { h: 299.53125, s: 1, l: 0.75716 };
-  const [hueHSL, setHueHSL] = useState(initHSL);
-  const [hsv, setHSV] = useState({ h: 0, s: 0, v: 0 });
+  const [hsv, setHSV] = useState({ h: 298, s: 0.5, v: 1 });
+  const [hsl, setHSL] = useState(hsvToHsl(hsv));
+  const [hueHSL, setHueHSL] = useState(hsl);
   const [cssColor, setCssColor] = useState("white");
-  const [hsl, setHSL] = useState(initHSL);
+
   useEffect(() => {
     setTimeout(() => {
       setHSV({ ...hsv });
     }, 0);
   }, []);
   useEffect(() => {
-    const l = hsv.v - (hsv.v * hsv.s) / 2;
-    const m = Math.min(l, 1 - l);
-    const s = m ? (hsv.v - l) / m : 0;
-    setHSL({ h: hsv.h, s: s, l: l });
+    setHSL(hsvToHsl(hsv));
   }, [hsv]);
   useEffect(() => {
     const s = hsl.s * 100;
@@ -116,7 +119,7 @@ function App() {
       <div style={styles.body} className="flexbox-fix">
         <div style={styles.saturation}>
           <Saturation
-            hsl={hueHSL}
+            hsl={hsl}
             hsv={hsv}
             pointer={PhotoshopPointerCircle}
             onChange={setHSV}
@@ -136,7 +139,6 @@ function App() {
         <div className="HSL">
           HSV: H:
           <input
-            defaultValue={String(hsv.v)}
             type="text"
             size="8"
             value={hsv.h}
@@ -153,7 +155,7 @@ function App() {
           <input
             type="text"
             size="8"
-            value={hsl.v}
+            value={hsv.v}
             onChange={clone(setHSV, hsv, "v")}
           ></input>
         </div>
