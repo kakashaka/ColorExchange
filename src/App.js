@@ -6,6 +6,8 @@ import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/Pho
 import { useEffect, useState } from "react";
 import { PhotoshopPicker } from "react-color";
 import Style from "style-it";
+import { makeAutoObservable } from "mobx";
+import { observer } from "mobx-react-lite";
 
 const styles = reactCSS({
   default: {
@@ -64,113 +66,130 @@ const styles = reactCSS({
     },
   },
 });
-function clone(setObj, obj, property) {
-  return (event) => {
-    setObj({ ...obj, [property]: Number(event.target.value) });
-  };
-}
 function hsvToHsl(hsv) {
   const l = hsv.v - (hsv.v * hsv.s) / 2;
   const m = Math.min(l, 1 - l);
   const s = m ? (hsv.v - l) / m : 0;
   return { h: hsv.h, s: s, l: l };
 }
+class Storage {
+  hsv = { h: 298, s: 0.5, v: 1 };
+  _hueHSL = null;
+  constructor() {
+    makeAutoObservable(this);
+    this._hueHSL = this.hsl;
+  }
+  get hueHSL() {
+    return { ...this._hueHSL, h: this.hsv.h };
+  }
 
-function HSVInputs(props) {
+  get hsl() {
+    return hsvToHsl(this.hsv);
+  }
+  get cssColor() {
+    const s = this.hsl.s * 100;
+    const l = this.hsl.l * 100;
+    return `hsl(${this.hsl.h},${s}%,${l}%)`;
+  }
+}
+function NumberInput(props) {
+  const [value, setValue] = useState(props.value);
+  return (
+    <input
+      {...props}
+      type="text"
+      value={value}
+      onChange={(event) => {
+        setValue(event.target.value);
+        const value = Number(event.target.value);
+        if (!!value) {
+          props.onChange(value);
+        }
+      }}
+    ></input>
+  );
+}
+const storage = new Storage();
+const HSVInputs = observer(() => {
   return (
     <div className="HSV">
       HSV: H:
-      <input
-        type="text"
+      <NumberInput
         size="8"
-        value={props.hsv.h}
-        onChange={clone(props.setHSV, props.hsv, "h")}
-      ></input>
+        value={storage.hsv.h}
+        onChange={(value) => {
+          storage.hsv.h = value;
+        }}
+      ></NumberInput>
       S:
-      <input
-        type="text"
+      <NumberInput
         size="8"
-        value={props.hsv.s}
-        onChange={clone(props.setHSV, props.hsv, "s")}
-      ></input>
+        value={storage.hsv.s}
+        onChange={(value) => {
+          storage.hsv.s = value;
+        }}
+      ></NumberInput>
       V:
-      <input
-        type="text"
+      <NumberInput
         size="8"
-        value={props.hsv.v}
-        onChange={clone(props.setHSV, props.hsv, "v")}
-      ></input>
+        value={storage.hsv.v}
+        onChange={(value) => {
+          storage.hsv.v = value;
+        }}
+      ></NumberInput>
     </div>
   );
-}
+});
 function hslToHsv(hsl) {
   const v = hsl.s * Math.min(hsl.l, 1 - hsl.l) + hsl.l;
   const s = v ? 2 - (2 * hsl.l) / v : 0;
-  return { h:hsl.h, s, v };
+  return { h: hsl.h, s, v };
 }
-function HSLInputs(props) {
-  const [hsl, setHSL] = useState(hsvToHsl(props.hsv));
-  useEffect(() => {
-    props.setHSV(hslToHsv(hsl));
-  }, [hsl]);
+const HSLInputs = observer(() => {
   return (
     <div className="HSL">
-      HSL: H:
-      <input
-        type="text"
+      <span className="HSL__span">HSL</span>: H:
+      <NumberInput
         size="8"
-        value={hsl.h}
-        onChange={clone(setHSL, hsl, "h")}
-      ></input>
+        value={storage.hsl.h}
+        onChange={(h) => {
+          const hsl = { ...storage.hsl, h: h };
+          storage.hsv = hslToHsv(hsl);
+        }}
+      ></NumberInput>
       S:
-      <input
-        type="text"
+      <NumberInput
         size="8"
-        value={hsl.s}
-        onChange={clone(setHSL, hsl, "s")}
-      ></input>
+        value={storage.hsl.s}
+        onChange={(s) => {
+          const hsl = { ...storage.hsl, s: s };
+          storage.hsv = hslToHsv(hsl);
+        }}
+      ></NumberInput>
       L:
-      <input
-        type="text"
+      <NumberInput
         size="8"
-        value={hsl.l}
-        onChange={clone(setHSL, hsl, "l")}
-      ></input>
+        value={storage.hsl.l}
+        onChange={(l) => {
+          const hsl = { ...storage.hsl, l: l };
+          storage.hsv = hslToHsv(hsl);
+        }}
+      ></NumberInput>
     </div>
   );
-}
-function App() {
-  const [hsv, setHSV] = useState({ h: 298, s: 0.5, v: 1 });
-  const [hsl, setHSL] = useState(hsvToHsl(hsv));
-  const [hueHSL, setHueHSL] = useState(hsl);
-  const [cssColor, setCssColor] = useState("white");
-
-  useEffect(() => {
-    setHSL(hsvToHsl(hsv));
-  }, [hsv]);
-  useEffect(() => {
-    const s = hsl.s * 100;
-    const l = hsl.l * 100;
-    setCssColor(`hsl(${hsl.h},${s}%,${l}%)`);
-  }, [hsv]);
-  useEffect(() => {
-    console.log(hsl);
-  }, [hsl]);
-  useEffect(() => {
-    console.log(hsv);
-  }, [hsv]);
-
+});
+const App = observer(() => {
   return (
     <div style={styles.picker} className={`photoshop-picker`}>
       <Style>
         {`  
           .heart::before, .heart::after { 
-            background-color: ${cssColor};
-            box-shadow: 0px 0px 20px ${cssColor}
+            background-color: ${storage.cssColor};
+            box-shadow: 0px 0px 20px ${storage.cssColor}
           }
           .heart {
-            background-color: ${cssColor};
-            box-shadow: 0px 0px 20px ${cssColor}
+            background-color: ${storage.cssColor};
+            box-shadow: 0px 0px 20px ${storage.cssColor}
           }
         `}
       </Style>
@@ -178,29 +197,30 @@ function App() {
       <div style={styles.body} className="flexbox-fix">
         <div style={styles.saturation}>
           <Saturation
-            hsl={hsl}
-            hsv={hsv}
+            hsl={storage.hsl}
+            hsv={storage.hsv}
             pointer={PhotoshopPointerCircle}
-            onChange={setHSV}
+            onChange={(hsv) => {
+              storage.hsv = hsv;
+            }}
           />
         </div>
         <div style={styles.hue}>
           <Hue
             direction="vertical"
-            hsl={hueHSL}
-            onChange={(newHueHSL) => {
-              setHueHSL(newHueHSL);
-              setHSV({ ...hsv, h: newHueHSL.h });
+            hsl={storage.hueHSL}
+            onChange={(hueHSL) => {
+              storage._hueHSL = hueHSL;
+              storage.hsv.h = hueHSL.h;
             }}
           />
         </div>
         <div className="heart"> </div>
-        <HSVInputs hsv={hsv} setHSV={setHSV}/>
-        <HSLInputs hsv={hsv} setHSV={setHSV}/>
-        
+        <HSVInputs />
+        <HSLInputs />
       </div>
     </div>
   );
-}
+});
 
 export default App;
