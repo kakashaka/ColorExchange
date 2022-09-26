@@ -6,7 +6,7 @@ import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/Pho
 import { useEffect, useState } from "react";
 import { PhotoshopPicker } from "react-color";
 import Style from "style-it";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 
 const styles = reactCSS({
@@ -92,8 +92,12 @@ class Storage {
     return `hsl(${this.hsl.h},${s}%,${l}%)`;
   }
 }
-function NumberInput(props) {
+const storage = new Storage();
+const NumberInput = observer((props) => {
   const [value, setValue] = useState(props.value);
+  useEffect(() => {
+    setValue(props.value);
+  }, [props.value]);
   return (
     <input
       {...props}
@@ -103,13 +107,12 @@ function NumberInput(props) {
         setValue(event.target.value);
         const value = Number(event.target.value);
         if (!!value) {
-          props.onChange(value);
+          runInAction(() => props.onChange(value));
         }
       }}
     ></input>
   );
-}
-const storage = new Storage();
+})
 const HSVInputs = observer(() => {
   return (
     <div className="HSV">
@@ -182,8 +185,8 @@ const App = observer(() => {
   return (
     <div style={styles.picker} className={`photoshop-picker`}>
       <Style>
-        {`  
-          .heart::before, .heart::after { 
+        {`
+          .heart::before, .heart::after {
             background-color: ${storage.cssColor};
             box-shadow: 0px 0px 20px ${storage.cssColor}
           }
@@ -200,19 +203,19 @@ const App = observer(() => {
             hsl={storage.hsl}
             hsv={storage.hsv}
             pointer={PhotoshopPointerCircle}
-            onChange={(hsv) => {
+            onChange={(hsv) => runInAction(() => {
               storage.hsv = hsv;
-            }}
+            })}
           />
         </div>
         <div style={styles.hue}>
           <Hue
             direction="vertical"
             hsl={storage.hueHSL}
-            onChange={(hueHSL) => {
+            onChange={(hueHSL) => runInAction(() => {
               storage._hueHSL = hueHSL;
               storage.hsv.h = hueHSL.h;
-            }}
+            })}
           />
         </div>
         <div className="heart"> </div>
