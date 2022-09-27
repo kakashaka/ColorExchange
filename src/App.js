@@ -1,6 +1,6 @@
 import reactCSS from "reactcss";
 import logo from "./logo.svg";
-import "./App.css";
+import "./style.sass";
 import { ColorWrap, Saturation, Hue } from "react-color/lib/components/common";
 import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/PhotoshopPointerCircle";
 import { useEffect, useState } from "react";
@@ -91,6 +91,91 @@ class Storage {
     const l = this.hsl.l * 100;
     return `hsl(${this.hsl.h},${s}%,${l}%)`;
   }
+  get rgb() {
+    const h = this.hsv.h / 360;
+    if (this.hsv.s == 0) {
+      return { r: this.hsv.v * 255, g: this.hsv.v * 255, b: this.hsv.v * 255 };
+    }
+    const var_h = h * 6;
+    const var_i = Math.floor(var_h);
+    const var_1 = this.hsv.v * (1 - this.hsv.s);
+    const var_2 = this.hsv.v * (1 - this.hsv.s * (var_h - var_i));
+    const var_3 = this.hsv.v * (1 - this.hsv.s * (1 - (var_h - var_i)));
+    let var_r, var_g, var_b;
+    if (var_i == 0) {
+      var_r = this.hsv.v;
+      var_g = var_3;
+      var_b = var_1;
+    } else if (var_i == 1) {
+      var_r = var_2;
+      var_g = this.hsv.v;
+      var_b = var_1;
+    } else if (var_i == 2) {
+      var_r = var_1;
+      var_g = this.hsv.v;
+      var_b = var_3;
+    } else if (var_i == 3) {
+      var_r = var_1;
+      var_g = var_2;
+      var_b = this.hsv.v;
+    } else if (var_i == 4) {
+      var_r = var_3;
+      var_g = var_1;
+      var_b = this.hsv.v;
+    } else {
+      var_r = this.hsv.v;
+      var_g = var_1;
+      var_b = var_2;
+    }
+
+    var_r *= 255;
+    var_g *= 255;
+    var_b *= 255;
+
+    var_r = Math.round(var_r);
+    var_g = Math.round(var_g);
+    var_b = Math.round(var_b);
+    return { r: var_r, g: var_g, b: var_b };
+  }
+  set rgb(rgb) {
+    const r = rgb.r / 255;
+    const g = rgb.g / 255;
+    const b = rgb.b / 255;
+
+    const minVal = Math.min(r, g, b);
+    const maxVal = Math.max(r, g, b);
+    const delta = maxVal - minVal;
+
+    this.hsv.v = maxVal;
+
+    if (delta == 0) {
+      this.hsv.h = 0;
+      this.hsv.s = 0;
+      return;
+    }
+    this.hsv.s = delta / maxVal;
+    const del_R = ((maxVal - r) / 6 + delta / 2) / delta;
+    const del_G = ((maxVal - g) / 6 + delta / 2) / delta;
+    const del_B = ((maxVal - b) / 6 + delta / 2) / delta;
+
+    if (r == maxVal) {
+      this.hsv.h = del_B - del_G;
+    } else if (g == maxVal) {
+      this.hsv.h = 1 / 3 + del_R - del_B;
+    } else if (b == maxVal) {
+      this.hsv.h = 2 / 3 + del_G - del_R;
+    }
+
+    if (this.hsv.h < 0) {
+      this.hsv.h += 1;
+    }
+    if (this.hsv.h > 1) {
+      this.hsv.h -= 1;
+    }
+
+    this.hsv.h = Math.round(this.hsv.h * 360);
+    
+  }
 }
 const storage = new Storage();
 const NumberInput = observer((props) => {
@@ -112,7 +197,7 @@ const NumberInput = observer((props) => {
       }}
     ></input>
   );
-})
+});
 const HSVInputs = observer(() => {
   return (
     <div className="HSV">
@@ -143,6 +228,36 @@ const HSVInputs = observer(() => {
     </div>
   );
 });
+const RGBInputs = observer(() => {
+  return (
+    <div className="RGB">
+      RGB: R:
+      <NumberInput
+        size="8"
+        value={storage.rgb.r}
+        onChange={(r) => {
+          storage.rgb = {...storage.rgb,r:r}
+        }}
+      ></NumberInput>
+      G:
+      <NumberInput
+        size="8"
+        value={storage.rgb.g}
+        onChange={(g) => {
+          storage.rgb = {...storage.rgb,g:g}
+        }}
+      ></NumberInput>
+      B:
+      <NumberInput
+        size="8"
+        value={storage.rgb.b}
+        onChange={(b) => {
+          storage.rgb = {...storage.rgb,b:b}
+        }}
+      ></NumberInput>
+    </div>
+  );
+});
 function hslToHsv(hsl) {
   const v = hsl.s * Math.min(hsl.l, 1 - hsl.l) + hsl.l;
   const s = v ? 2 - (2 * hsl.l) / v : 0;
@@ -151,7 +266,7 @@ function hslToHsv(hsl) {
 const HSLInputs = observer(() => {
   return (
     <div className="HSL">
-      <span className="HSL__span">HSL</span>: H:
+      HSL: H:
       <NumberInput
         size="8"
         value={storage.hsl.h}
@@ -183,7 +298,7 @@ const HSLInputs = observer(() => {
 });
 const App = observer(() => {
   return (
-    <div style={styles.picker} className={`photoshop-picker`}>
+    <div>
       <Style>
         {`
           .heart::before, .heart::after {
@@ -196,31 +311,40 @@ const App = observer(() => {
           }
         `}
       </Style>
-      <div style={styles.head}>Header</div>
-      <div style={styles.body} className="flexbox-fix">
-        <div style={styles.saturation}>
-          <Saturation
-            hsl={storage.hsl}
-            hsv={storage.hsv}
-            pointer={PhotoshopPointerCircle}
-            onChange={(hsv) => runInAction(() => {
-              storage.hsv = hsv;
-            })}
-          />
+      <div className="flexbox-fix">
+        <div style={styles.picker} className={`photoshop-picker`}>
+          <div style={styles.head}>Header</div>
+          <div style={styles.body}>
+            <div style={styles.saturation}>
+              <Saturation
+                hsl={storage.hsl}
+                hsv={storage.hsv}
+                pointer={PhotoshopPointerCircle}
+                onChange={(hsv) =>
+                  runInAction(() => {
+                    storage.hsv = hsv;
+                  })
+                }
+              />
+            </div>
+            <div style={styles.hue}>
+              <Hue
+                direction="vertical"
+                hsl={storage.hueHSL}
+                onChange={(hueHSL) =>
+                  runInAction(() => {
+                    storage._hueHSL = hueHSL;
+                    storage.hsv.h = hueHSL.h;
+                  })
+                }
+              />
+            </div>
+            <div className="heart"> </div>
+          </div>
+          <HSVInputs />
+          <HSLInputs />
+          <RGBInputs />
         </div>
-        <div style={styles.hue}>
-          <Hue
-            direction="vertical"
-            hsl={storage.hueHSL}
-            onChange={(hueHSL) => runInAction(() => {
-              storage._hueHSL = hueHSL;
-              storage.hsv.h = hueHSL.h;
-            })}
-          />
-        </div>
-        <div className="heart"> </div>
-        <HSVInputs />
-        <HSLInputs />
       </div>
     </div>
   );
