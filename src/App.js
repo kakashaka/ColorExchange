@@ -4,7 +4,7 @@ import "./style.sass";
 // import { convert } from "color-convert";
 import { ColorWrap, Saturation, Hue } from "react-color/lib/components/common";
 import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/PhotoshopPointerCircle";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PhotoshopPicker } from "react-color";
 import Style from "style-it";
 import { makeAutoObservable, runInAction } from "mobx";
@@ -69,15 +69,8 @@ const styles = reactCSS({
   },
 });
 
-function round(value_1, value_2) {
-  // return Math.round(value_1 * value_2) / value_2;
-  return value_1;
-}
-// Math.floor = (value) => {
-//   return value;
-// };
 class Storage {
-  hsv = { h: 298, s: 0.5, v: 1 };
+  rgb = { r: 251, g: 128, b: 255 };
   _hueHSL = null;
   constructor() {
     makeAutoObservable(this);
@@ -88,69 +81,56 @@ class Storage {
   }
 
   get hsl() {
-    const hsl = convert.hsv.hsl([
-      this.hsv.h,
-      this.hsv.s * 100,
-      this.hsv.v * 100,
-    ]);
-    return { h: hsl[0], s: hsl[1] / 100, l: hsl[2] / 100 };
+    const hsl = convert.rgb.hsl(this._rgb);
+    return { h: hsl[0], s: hsl[1], l: hsl[2] };
   }
   set hsl(hsl) {
-    const hsv = convert.hsl.hsv([hsl.h, hsl.s * 100, hsl.l * 100]);
-    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+    this._rgb = convert.hsl.rgb([hsl.h, hsl.s, hsl.l]);
   }
   get cssColor() {
-    const s = this.hsl.s * 100;
-    const l = this.hsl.l * 100;
-    return `hsl(${this.hsl.h},${s}%,${l}%)`;
+    return `rgb(${this.rgb.r},${this.rgb.g},${this.rgb.b})`;
   }
-  get rgb() {
-    const rgb = convert.hsv.rgb([
-      this.hsv.h,
-      this.hsv.s * 100,
-      this.hsv.v * 100,
-    ]);
-    return { r: rgb[0], g: rgb[1], b: rgb[2] };
+  get hsv() {
+    const hsv = convert.rgb.hsv(this._rgb);
+    return { h: hsv[0], s: hsv[1], v: hsv[2] };
   }
-  set rgb(rgb) {
-    const hsv = convert.rgb.hsv([rgb.r, rgb.g, rgb.b]);
-    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+  get _rgb() {
+    return [this.rgb.r, this.rgb.g, this.rgb.b];
+  }
+  set _rgb(rgb) {
+    this.rgb = { r: rgb[0], g: rgb[1], b: rgb[2] };
+  }
+  set hsv(hsv) {
+    this._rgb = convert.hsv.rgb([hsv.h, hsv.s, hsv.v]);
   }
   get cmyk() {
-    const cmyk = convert.hsv.cmyk([
-      this.hsv.h,
-      this.hsv.s * 100,
-      this.hsv.v * 100,
-    ]);
+    const cmyk = convert.rgb.cmyk(this._rgb);
     return { c: cmyk[0], m: cmyk[1], y: cmyk[2], k: cmyk[3] };
   }
   set cmyk(cmyk) {
-    const hsv = convert.cmyk.hsv([cmyk.c, cmyk.m, cmyk.y, cmyk.k]);
-    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+    this._rgb = convert.cmyk.rgb([cmyk.c, cmyk.m, cmyk.y, cmyk.k]);
   }
   get lab() {
-    const lab = convert.hsv.lab([
-      this.hsv.h,
-      this.hsv.s * 100,
-      this.hsv.v * 100,
-    ]);
+    const lab = convert.rgb.lab(this._rgb);
     return { l: lab[0], a: lab[1], b: lab[2] };
   }
   set lab(lab) {
-    const hsv = convert.lab.hsv([lab.l, lab.a, lab.b]);
-    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+    this._rgb = convert.lab.rgb([lab.l, lab.a, lab.b]);
   }
   get xyz() {
-    const xyz = convert.hsv.xyz([
-      this.hsv.h,
-      this.hsv.s * 100,
-      this.hsv.v * 100,
-    ]);
+    const xyz = convert.rgb.xyz(this._rgb);
     return { x: xyz[0], y: xyz[1], z: xyz[2] };
   }
   set xyz(xyz) {
-    const hsv = convert.xyz.hsv([xyz.x, xyz.y, xyz.z]);
-    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+    this._rgb = convert.xyz.rgb([xyz.x, xyz.y, xyz.z]);
+  }
+  get hslView() {
+    const hsl = this.hsl;
+    return { h: hsl.h, s: hsl.s / 100, l: hsl.l / 100 };
+  }
+  get hsvView() {
+    const hsv = this.hsv;
+    return { h: hsv.h, s: hsv.s / 100, v: hsv.v / 100 };
   }
 }
 const storage = new Storage();
@@ -166,12 +146,76 @@ const NumberInput = observer((props) => {
       value={value}
       onChange={(event) => {
         setValue(event.target.value);
-        const value = Number(event.target.value);
-        if (!!value) {
-          runInAction(() => props.onChange(value));
+      }}
+      onBlur={() => {
+        const formattedValue = Number(value);
+        if (formattedValue !== 0 && !formattedValue) {
+          return;
         }
+        runInAction(() => props.onChange(formattedValue));
       }}
     ></input>
+  );
+});
+const NumberInputV_2 = observer((props) => {
+  const [value, setValue] = useState(props.value);
+  const inputRef = useRef();
+
+  const [sliderCoordinates, setSliderCoordinates] = useState();
+  useEffect(() => {
+    setValue(props.value);
+  }, [props.value]);
+  return (
+    <span
+      onFocus={() => {
+        const inputCoordinates = inputRef.current.getBoundingClientRect();
+        setSliderCoordinates({
+          x: inputCoordinates.x - 30,
+          y: inputCoordinates.y + 5,
+        });
+      }}
+      onBlur={() => {
+        window.inputRef = inputRef;
+        setSliderCoordinates(null);
+        const formattedValue = Math.ceil(Number(value));
+        if (formattedValue !== 0 && !formattedValue) {
+          return;
+        }
+        runInAction(() => props.onChange(formattedValue));
+      }}
+    >
+      <input
+        {...props}
+        type="text"
+        ref={inputRef}
+        value={value}
+        onChange={(event) => {
+          setValue(event.target.value);
+        }}
+      ></input>
+      <Style>
+        {`
+          .slider{
+            left:${sliderCoordinates.x}px;
+            top:${sliderCoordinates.y}px;
+          }
+        `}
+      </Style>
+      <div className="slider">
+        <span>0</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={value}
+          onChange={(event) => {
+            setValue(event.target.value);
+          }}
+        />
+        <span>100</span>
+      </div>
+    </span>
   );
 });
 const HSVInputs = observer(() => {
@@ -181,24 +225,24 @@ const HSVInputs = observer(() => {
       <NumberInput
         size="8"
         value={storage.hsv.h}
-        onChange={(value) => {
-          storage.hsv.h = value;
+        onChange={(h) => {
+          storage.hsv = { ...storage.hsv, h: h };
         }}
       ></NumberInput>
       S:
       <NumberInput
         size="8"
         value={storage.hsv.s}
-        onChange={(value) => {
-          storage.hsv.s = value;
+        onChange={(s) => {
+          storage.hsv = { ...storage.hsv, s: s };
         }}
       ></NumberInput>
       V:
       <NumberInput
         size="8"
         value={storage.hsv.v}
-        onChange={(value) => {
-          storage.hsv.v = value;
+        onChange={(v) => {
+          storage.hsv = { ...storage.hsv, v: v };
         }}
       ></NumberInput>
     </div>
@@ -234,11 +278,6 @@ const RGBInputs = observer(() => {
     </div>
   );
 });
-function hslToHsv(hsl) {
-  const v = hsl.s * Math.min(hsl.l, 1 - hsl.l) + hsl.l;
-  const s = v ? 2 - (2 * hsl.l) / v : 0;
-  return { h: hsl.h, s, v };
-}
 const HSLInputs = observer(() => {
   return (
     <div className="HSL">
@@ -299,7 +338,7 @@ const CMYKInputs = observer(() => {
       K:
       <NumberInput
         size="8"
-        value={storage.hsl.l}
+        value={storage.cmyk.k}
         onChange={(k) => {
           storage.cmyk = { ...storage.cmyk, k: k };
         }}
@@ -329,7 +368,7 @@ const LABInputs = observer(() => {
       B:
       <NumberInput
         size="8"
-        value={storage.hsv.v}
+        value={storage.lab.b}
         onChange={(b) => {
           storage.lab = { ...storage.lab, b: b };
         }}
@@ -388,12 +427,12 @@ const App = observer(() => {
           <div style={styles.body}>
             <div style={styles.saturation}>
               <Saturation
-                hsl={storage.hsl}
-                hsv={storage.hsv}
+                hsl={storage.hslView}
+                hsv={storage.hsvView}
                 pointer={PhotoshopPointerCircle}
                 onChange={(hsv) =>
                   runInAction(() => {
-                    storage.hsv = hsv;
+                    storage.hsv = { h: hsv.h, s: hsv.s * 100, v: hsv.v * 100 };
                   })
                 }
               />
@@ -405,7 +444,7 @@ const App = observer(() => {
                 onChange={(hueHSL) =>
                   runInAction(() => {
                     storage._hueHSL = hueHSL;
-                    storage.hsv.h = hueHSL.h;
+                    storage.hsv = { ...storage.hsv, h: hueHSL.h };
                   })
                 }
               />
