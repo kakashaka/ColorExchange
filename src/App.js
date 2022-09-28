@@ -1,6 +1,7 @@
 import reactCSS from "reactcss";
 import logo from "./logo.svg";
 import "./style.sass";
+import { convert } from "./convertions";
 import { ColorWrap, Saturation, Hue } from "react-color/lib/components/common";
 import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/PhotoshopPointerCircle";
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ const styles = reactCSS({
       borderRadius: "4px",
       boxShadow: "0 0 0 1px rgba(0,0,0,.25), 0 8px 16px rgba(0,0,0,.15)",
       boxSizing: "initial",
-      width: "440px",
+      width: "531px",
     },
     head: {
       backgroundImage: "linear-gradient(-180deg, #F0F0F0 0%, #D4D4D4 100%)",
@@ -66,11 +67,10 @@ const styles = reactCSS({
     },
   },
 });
-function hsvToHsl(hsv) {
-  const l = hsv.v - (hsv.v * hsv.s) / 2;
-  const m = Math.min(l, 1 - l);
-  const s = m ? (hsv.v - l) / m : 0;
-  return { h: hsv.h, s: s, l: l };
+
+function round(value_1, value_2) {
+  // return Math.round(value_1 * value_2) / value_2;
+  return value_1;
 }
 class Storage {
   hsv = { h: 298, s: 0.5, v: 1 };
@@ -84,7 +84,16 @@ class Storage {
   }
 
   get hsl() {
-    return hsvToHsl(this.hsv);
+    const hsl = convert.hsv.hsl([
+      this.hsv.h,
+      this.hsv.s * 100,
+      this.hsv.v * 100,
+    ]);
+    return { h: hsl[0], s: hsl[1] / 100, l: hsl[2] / 100 };
+  }
+  set hsl(hsl) {
+    const hsv = convert.hsl.hsv([hsl.h, hsl.s * 100, hsl.l * 100]);
+    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
   }
   get cssColor() {
     const s = this.hsl.s * 100;
@@ -92,89 +101,29 @@ class Storage {
     return `hsl(${this.hsl.h},${s}%,${l}%)`;
   }
   get rgb() {
-    const h = this.hsv.h / 360;
-    if (this.hsv.s == 0) {
-      return { r: this.hsv.v * 255, g: this.hsv.v * 255, b: this.hsv.v * 255 };
-    }
-    const var_h = h * 6;
-    const var_i = Math.floor(var_h);
-    const var_1 = this.hsv.v * (1 - this.hsv.s);
-    const var_2 = this.hsv.v * (1 - this.hsv.s * (var_h - var_i));
-    const var_3 = this.hsv.v * (1 - this.hsv.s * (1 - (var_h - var_i)));
-    let var_r, var_g, var_b;
-    if (var_i == 0) {
-      var_r = this.hsv.v;
-      var_g = var_3;
-      var_b = var_1;
-    } else if (var_i == 1) {
-      var_r = var_2;
-      var_g = this.hsv.v;
-      var_b = var_1;
-    } else if (var_i == 2) {
-      var_r = var_1;
-      var_g = this.hsv.v;
-      var_b = var_3;
-    } else if (var_i == 3) {
-      var_r = var_1;
-      var_g = var_2;
-      var_b = this.hsv.v;
-    } else if (var_i == 4) {
-      var_r = var_3;
-      var_g = var_1;
-      var_b = this.hsv.v;
-    } else {
-      var_r = this.hsv.v;
-      var_g = var_1;
-      var_b = var_2;
-    }
-
-    var_r *= 255;
-    var_g *= 255;
-    var_b *= 255;
-
-    var_r = Math.round(var_r);
-    var_g = Math.round(var_g);
-    var_b = Math.round(var_b);
-    return { r: var_r, g: var_g, b: var_b };
+    const rgb = convert.hsv.rgb([
+      this.hsv.h,
+      this.hsv.s * 100,
+      this.hsv.v * 100,
+    ]);
+    return { r: rgb[0], g: rgb[1], b: rgb[2] };
   }
   set rgb(rgb) {
-    const r = rgb.r / 255;
-    const g = rgb.g / 255;
-    const b = rgb.b / 255;
-
-    const minVal = Math.min(r, g, b);
-    const maxVal = Math.max(r, g, b);
-    const delta = maxVal - minVal;
-
-    this.hsv.v = maxVal;
-
-    if (delta == 0) {
-      this.hsv.h = 0;
-      this.hsv.s = 0;
-      return;
-    }
-    this.hsv.s = delta / maxVal;
-    const del_R = ((maxVal - r) / 6 + delta / 2) / delta;
-    const del_G = ((maxVal - g) / 6 + delta / 2) / delta;
-    const del_B = ((maxVal - b) / 6 + delta / 2) / delta;
-
-    if (r == maxVal) {
-      this.hsv.h = del_B - del_G;
-    } else if (g == maxVal) {
-      this.hsv.h = 1 / 3 + del_R - del_B;
-    } else if (b == maxVal) {
-      this.hsv.h = 2 / 3 + del_G - del_R;
-    }
-
-    if (this.hsv.h < 0) {
-      this.hsv.h += 1;
-    }
-    if (this.hsv.h > 1) {
-      this.hsv.h -= 1;
-    }
-
-    this.hsv.h = Math.round(this.hsv.h * 360);
-    
+    const hsv = convert.rgb.hsv([rgb.r, rgb.g, rgb.b]);
+    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+  }
+  get cmyk() {
+    return {};
+    const cmyk = convert.hsv.cmyk([
+      this.hsv.h,
+      this.hsv.s * 100,
+      this.hsv.v * 100,
+    ]);
+    return { c: cmyk[0], m: cmyk[1], y: cmyk[2], k: cmyk[3] };
+  }
+  set cmyk(cmyk) {
+    const hsv = convert.hsv.cmyk([cmyk.c, cmyk.m, cmyk.y, cmyk.k]);
+    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
   }
 }
 const storage = new Storage();
@@ -201,7 +150,7 @@ const NumberInput = observer((props) => {
 const HSVInputs = observer(() => {
   return (
     <div className="HSV">
-      HSV: H:
+      HSV: <span>H:</span>
       <NumberInput
         size="8"
         value={storage.hsv.h}
@@ -231,12 +180,12 @@ const HSVInputs = observer(() => {
 const RGBInputs = observer(() => {
   return (
     <div className="RGB">
-      RGB: R:
+      RGB: <span>R:</span>
       <NumberInput
         size="8"
         value={storage.rgb.r}
         onChange={(r) => {
-          storage.rgb = {...storage.rgb,r:r}
+          storage.rgb = { ...storage.rgb, r: r };
         }}
       ></NumberInput>
       G:
@@ -244,7 +193,7 @@ const RGBInputs = observer(() => {
         size="8"
         value={storage.rgb.g}
         onChange={(g) => {
-          storage.rgb = {...storage.rgb,g:g}
+          storage.rgb = { ...storage.rgb, g: g };
         }}
       ></NumberInput>
       B:
@@ -252,7 +201,7 @@ const RGBInputs = observer(() => {
         size="8"
         value={storage.rgb.b}
         onChange={(b) => {
-          storage.rgb = {...storage.rgb,b:b}
+          storage.rgb = { ...storage.rgb, b: b };
         }}
       ></NumberInput>
     </div>
@@ -266,13 +215,12 @@ function hslToHsv(hsl) {
 const HSLInputs = observer(() => {
   return (
     <div className="HSL">
-      HSL: H:
+      HSL: <span>H:</span>
       <NumberInput
         size="8"
         value={storage.hsl.h}
         onChange={(h) => {
-          const hsl = { ...storage.hsl, h: h };
-          storage.hsv = hslToHsv(hsl);
+          storage.hsl = { ...storage.hsl, h: h };
         }}
       ></NumberInput>
       S:
@@ -280,8 +228,7 @@ const HSLInputs = observer(() => {
         size="8"
         value={storage.hsl.s}
         onChange={(s) => {
-          const hsl = { ...storage.hsl, s: s };
-          storage.hsv = hslToHsv(hsl);
+          storage.hsl = { ...storage.hsl, s: s };
         }}
       ></NumberInput>
       L:
@@ -289,8 +236,45 @@ const HSLInputs = observer(() => {
         size="8"
         value={storage.hsl.l}
         onChange={(l) => {
-          const hsl = { ...storage.hsl, l: l };
-          storage.hsv = hslToHsv(hsl);
+          storage.hsl = { ...storage.hsl, l: l };
+        }}
+      ></NumberInput>
+    </div>
+  );
+});
+const CMYKInputs = observer(() => {
+  return (
+    <div className="CMYK">
+      CMYK: C:
+      <NumberInput
+        size="8"
+        value={storage.cmyk.c}
+        onChange={(c) => {
+          storage.cmyk = { ...storage.cmyk, c: c };
+        }}
+      ></NumberInput>
+      M:
+      <NumberInput
+        size="8"
+        value={storage.cmyk.m}
+        onChange={(m) => {
+          storage.cmyk = { ...storage.cmyk, m: m };
+        }}
+      ></NumberInput>
+      Y:
+      <NumberInput
+        size="8"
+        value={storage.cmyk.y}
+        onChange={(y) => {
+          storage.cmyk = { ...storage.cmyk, y: y };
+        }}
+      ></NumberInput>
+      K:
+      <NumberInput
+        size="8"
+        value={storage.hsl.l}
+        onChange={(k) => {
+          storage.cmyk = { ...storage.cmyk, k: k };
         }}
       ></NumberInput>
     </div>
@@ -344,6 +328,7 @@ const App = observer(() => {
           <HSVInputs />
           <HSLInputs />
           <RGBInputs />
+          <CMYKInputs />
         </div>
       </div>
     </div>
