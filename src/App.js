@@ -1,7 +1,7 @@
 import reactCSS from "reactcss";
 import logo from "./logo.svg";
 import "./style.sass";
-import { convert } from "./convertions";
+// import { convert } from "color-convert";
 import { ColorWrap, Saturation, Hue } from "react-color/lib/components/common";
 import { PhotoshopPointerCircle } from "react-color/lib/components/photoshop/PhotoshopPointerCircle";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { PhotoshopPicker } from "react-color";
 import Style from "style-it";
 import { makeAutoObservable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
+const convert = require("color-convert");
 
 const styles = reactCSS({
   default: {
@@ -72,6 +73,9 @@ function round(value_1, value_2) {
   // return Math.round(value_1 * value_2) / value_2;
   return value_1;
 }
+// Math.floor = (value) => {
+//   return value;
+// };
 class Storage {
   hsv = { h: 298, s: 0.5, v: 1 };
   _hueHSL = null;
@@ -113,7 +117,6 @@ class Storage {
     this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
   }
   get cmyk() {
-    return {};
     const cmyk = convert.hsv.cmyk([
       this.hsv.h,
       this.hsv.s * 100,
@@ -122,7 +125,31 @@ class Storage {
     return { c: cmyk[0], m: cmyk[1], y: cmyk[2], k: cmyk[3] };
   }
   set cmyk(cmyk) {
-    const hsv = convert.hsv.cmyk([cmyk.c, cmyk.m, cmyk.y, cmyk.k]);
+    const hsv = convert.cmyk.hsv([cmyk.c, cmyk.m, cmyk.y, cmyk.k]);
+    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+  }
+  get lab() {
+    const lab = convert.hsv.lab([
+      this.hsv.h,
+      this.hsv.s * 100,
+      this.hsv.v * 100,
+    ]);
+    return { l: lab[0], a: lab[1], b: lab[2] };
+  }
+  set lab(lab) {
+    const hsv = convert.lab.hsv([lab.l, lab.a, lab.b]);
+    this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
+  }
+  get xyz() {
+    const xyz = convert.hsv.xyz([
+      this.hsv.h,
+      this.hsv.s * 100,
+      this.hsv.v * 100,
+    ]);
+    return { x: xyz[0], y: xyz[1], z: xyz[2] };
+  }
+  set xyz(xyz) {
+    const hsv = convert.xyz.hsv([xyz.x, xyz.y, xyz.z]);
     this.hsv = { h: hsv[0], s: hsv[1] / 100, v: hsv[2] / 100 };
   }
 }
@@ -280,6 +307,66 @@ const CMYKInputs = observer(() => {
     </div>
   );
 });
+const LABInputs = observer(() => {
+  return (
+    <div className="LAB">
+      LAB: <span>L:</span>
+      <NumberInput
+        size="8"
+        value={storage.lab.l}
+        onChange={(l) => {
+          storage.lab = { ...storage.lab, l: l };
+        }}
+      ></NumberInput>
+      A:
+      <NumberInput
+        size="8"
+        value={storage.lab.a}
+        onChange={(a) => {
+          storage.lab = { ...storage.lab, a: a };
+        }}
+      ></NumberInput>
+      B:
+      <NumberInput
+        size="8"
+        value={storage.hsv.v}
+        onChange={(b) => {
+          storage.lab = { ...storage.lab, b: b };
+        }}
+      ></NumberInput>
+    </div>
+  );
+});
+const XYZInputs = observer(() => {
+  return (
+    <div className="XYZ">
+      XYZ: <span>X:</span>
+      <NumberInput
+        size="8"
+        value={storage.xyz.x}
+        onChange={(x) => {
+          storage.xyz = { ...storage.xyz, x: x };
+        }}
+      ></NumberInput>
+      Y:
+      <NumberInput
+        size="8"
+        value={storage.xyz.y}
+        onChange={(y) => {
+          storage.xyz = { ...storage.xyz, y: y };
+        }}
+      ></NumberInput>
+      Z:
+      <NumberInput
+        size="8"
+        value={storage.xyz.z}
+        onChange={(z) => {
+          storage.xyz = { ...storage.xyz, z: z };
+        }}
+      ></NumberInput>
+    </div>
+  );
+});
 const App = observer(() => {
   return (
     <div>
@@ -329,6 +416,8 @@ const App = observer(() => {
           <HSLInputs />
           <RGBInputs />
           <CMYKInputs />
+          <XYZInputs />
+          <LABInputs />
         </div>
       </div>
     </div>
