@@ -18,7 +18,7 @@ const styles = reactCSS({
       borderRadius: "4px",
       boxShadow: "0 0 0 1px rgba(0,0,0,.25), 0 8px 16px rgba(0,0,0,.15)",
       boxSizing: "initial",
-      width: "531px",
+      width: "551px",
     },
     head: {
       backgroundImage: "linear-gradient(-180deg, #F0F0F0 0%, #D4D4D4 100%)",
@@ -134,31 +134,10 @@ class Storage {
   }
 }
 const storage = new Storage();
+
 const NumberInput = observer((props) => {
   const [value, setValue] = useState(props.value);
-  useEffect(() => {
-    setValue(props.value);
-  }, [props.value]);
-  return (
-    <input
-      {...props}
-      type="text"
-      value={value}
-      onChange={(event) => {
-        setValue(event.target.value);
-      }}
-      onBlur={() => {
-        const formattedValue = Number(value);
-        if (formattedValue !== 0 && !formattedValue) {
-          return;
-        }
-        runInAction(() => props.onChange(formattedValue));
-      }}
-    ></input>
-  );
-});
-const NumberInputV_2 = observer((props) => {
-  const [value, setValue] = useState(props.value);
+
   const inputRef = useRef();
 
   const [sliderCoordinates, setSliderCoordinates] = useState();
@@ -171,12 +150,12 @@ const NumberInputV_2 = observer((props) => {
         const inputCoordinates = inputRef.current.getBoundingClientRect();
         setSliderCoordinates({
           x: inputCoordinates.x - 30,
-          y: inputCoordinates.y + 5,
+          y: inputCoordinates.y + 20,
         });
       }}
       onBlur={() => {
         window.inputRef = inputRef;
-        setSliderCoordinates(null);
+        // setSliderCoordinates(null);
         const formattedValue = Math.ceil(Number(value));
         if (formattedValue !== 0 && !formattedValue) {
           return;
@@ -193,37 +172,45 @@ const NumberInputV_2 = observer((props) => {
           setValue(event.target.value);
         }}
       ></input>
-      <Style>
-        {`
+      {sliderCoordinates ? (
+        <>
+          <Style>
+            {`
           .slider{
             left:${sliderCoordinates.x}px;
             top:${sliderCoordinates.y}px;
           }
         `}
-      </Style>
-      <div className="slider">
-        <span>0</span>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={value}
-          onChange={(event) => {
-            setValue(event.target.value);
-          }}
-        />
-        <span>100</span>
-      </div>
+          </Style>
+          <div className="slider">
+            <span>{props.from}</span>
+            <input
+              type="range"
+              min={props.from}
+              max={props.to}
+              step="1"
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value);
+              }}
+            />
+            <span>{props.to}</span>
+          </div>
+        </>
+      ) : (
+        ""
+      )}
     </span>
   );
 });
 const HSVInputs = observer(() => {
   return (
     <div className="HSV">
-      HSV: <span>H:</span>
+      HSV: <span className="span">H:</span>
       <NumberInput
         size="8"
+        from={0}
+        to={360}
         value={storage.hsv.h}
         onChange={(h) => {
           storage.hsv = { ...storage.hsv, h: h };
@@ -232,6 +219,8 @@ const HSVInputs = observer(() => {
       S:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.hsv.s}
         onChange={(s) => {
           storage.hsv = { ...storage.hsv, s: s };
@@ -240,6 +229,8 @@ const HSVInputs = observer(() => {
       V:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.hsv.v}
         onChange={(v) => {
           storage.hsv = { ...storage.hsv, v: v };
@@ -251,9 +242,11 @@ const HSVInputs = observer(() => {
 const RGBInputs = observer(() => {
   return (
     <div className="RGB">
-      RGB: <span>R:</span>
+      RGB: <span className="span">R:</span>
       <NumberInput
         size="8"
+        from={0}
+        to={255}
         value={storage.rgb.r}
         onChange={(r) => {
           storage.rgb = { ...storage.rgb, r: r };
@@ -262,6 +255,8 @@ const RGBInputs = observer(() => {
       G:
       <NumberInput
         size="8"
+        from={0}
+        to={255}
         value={storage.rgb.g}
         onChange={(g) => {
           storage.rgb = { ...storage.rgb, g: g };
@@ -270,6 +265,8 @@ const RGBInputs = observer(() => {
       B:
       <NumberInput
         size="8"
+        from={0}
+        to={255}
         value={storage.rgb.b}
         onChange={(b) => {
           storage.rgb = { ...storage.rgb, b: b };
@@ -281,9 +278,11 @@ const RGBInputs = observer(() => {
 const HSLInputs = observer(() => {
   return (
     <div className="HSL">
-      HSL: <span>H:</span>
+      HSL: <span className="span">H:</span>
       <NumberInput
         size="8"
+        from={0}
+        to={360}
         value={storage.hsl.h}
         onChange={(h) => {
           storage.hsl = { ...storage.hsl, h: h };
@@ -292,6 +291,8 @@ const HSLInputs = observer(() => {
       S:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.hsl.s}
         onChange={(s) => {
           storage.hsl = { ...storage.hsl, s: s };
@@ -300,6 +301,8 @@ const HSLInputs = observer(() => {
       L:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.hsl.l}
         onChange={(l) => {
           storage.hsl = { ...storage.hsl, l: l };
@@ -314,6 +317,8 @@ const CMYKInputs = observer(() => {
       CMYK: C:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.cmyk.c}
         onChange={(c) => {
           storage.cmyk = { ...storage.cmyk, c: c };
@@ -322,6 +327,8 @@ const CMYKInputs = observer(() => {
       M:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.cmyk.m}
         onChange={(m) => {
           storage.cmyk = { ...storage.cmyk, m: m };
@@ -330,6 +337,8 @@ const CMYKInputs = observer(() => {
       Y:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.cmyk.y}
         onChange={(y) => {
           storage.cmyk = { ...storage.cmyk, y: y };
@@ -338,6 +347,8 @@ const CMYKInputs = observer(() => {
       K:
       <NumberInput
         size="8"
+        from={0}
+        to={100}
         value={storage.cmyk.k}
         onChange={(k) => {
           storage.cmyk = { ...storage.cmyk, k: k };
@@ -349,9 +360,11 @@ const CMYKInputs = observer(() => {
 const LABInputs = observer(() => {
   return (
     <div className="LAB">
-      LAB: <span>L:</span>
+      LAB: <span className="span">L:</span>
       <NumberInput
         size="8"
+        from={-128}
+        to={128}
         value={storage.lab.l}
         onChange={(l) => {
           storage.lab = { ...storage.lab, l: l };
@@ -360,6 +373,8 @@ const LABInputs = observer(() => {
       A:
       <NumberInput
         size="8"
+        from={-128}
+        to={128}
         value={storage.lab.a}
         onChange={(a) => {
           storage.lab = { ...storage.lab, a: a };
@@ -368,6 +383,8 @@ const LABInputs = observer(() => {
       B:
       <NumberInput
         size="8"
+        from={-128}
+        to={128}
         value={storage.lab.b}
         onChange={(b) => {
           storage.lab = { ...storage.lab, b: b };
@@ -379,9 +396,11 @@ const LABInputs = observer(() => {
 const XYZInputs = observer(() => {
   return (
     <div className="XYZ">
-      XYZ: <span>X:</span>
+      XYZ: <span className="span">X:</span>
       <NumberInput
         size="8"
+        from={0}
+        to={128}
         value={storage.xyz.x}
         onChange={(x) => {
           storage.xyz = { ...storage.xyz, x: x };
@@ -390,6 +409,8 @@ const XYZInputs = observer(() => {
       Y:
       <NumberInput
         size="8"
+        from={0}
+        to={128}
         value={storage.xyz.y}
         onChange={(y) => {
           storage.xyz = { ...storage.xyz, y: y };
@@ -398,6 +419,8 @@ const XYZInputs = observer(() => {
       Z:
       <NumberInput
         size="8"
+        from={0}
+        to={128}
         value={storage.xyz.z}
         onChange={(z) => {
           storage.xyz = { ...storage.xyz, z: z };
