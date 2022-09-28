@@ -137,7 +137,7 @@ const storage = new Storage();
 
 const NumberInput = observer((props) => {
   const [value, setValue] = useState(props.value);
-
+  const [blurTimeoutId, setBlurTimeoutId] = useState();
   const inputRef = useRef();
 
   const [sliderCoordinates, setSliderCoordinates] = useState();
@@ -150,12 +150,20 @@ const NumberInput = observer((props) => {
         const inputCoordinates = inputRef.current.getBoundingClientRect();
         setSliderCoordinates({
           x: inputCoordinates.x - 30,
-          y: inputCoordinates.y + 20,
+          y: inputCoordinates.y + 25,
         });
+        if (blurTimeoutId) {
+          clearTimeout(blurTimeoutId);
+          setBlurTimeoutId(null);
+        }
       }}
       onBlur={() => {
-        window.inputRef = inputRef;
-        // setSliderCoordinates(null);
+        setBlurTimeoutId(
+          setTimeout(() => {
+            setSliderCoordinates(null);
+          }, 100)
+        );
+
         const formattedValue = Math.ceil(Number(value));
         if (formattedValue !== 0 && !formattedValue) {
           return;
@@ -363,8 +371,8 @@ const LABInputs = observer(() => {
       LAB: <span className="span">L:</span>
       <NumberInput
         size="8"
-        from={-128}
-        to={128}
+        from={0}
+        to={100}
         value={storage.lab.l}
         onChange={(l) => {
           storage.lab = { ...storage.lab, l: l };
@@ -374,7 +382,7 @@ const LABInputs = observer(() => {
       <NumberInput
         size="8"
         from={-128}
-        to={128}
+        to={127}
         value={storage.lab.a}
         onChange={(a) => {
           storage.lab = { ...storage.lab, a: a };
@@ -384,7 +392,7 @@ const LABInputs = observer(() => {
       <NumberInput
         size="8"
         from={-128}
-        to={128}
+        to={127}
         value={storage.lab.b}
         onChange={(b) => {
           storage.lab = { ...storage.lab, b: b };
@@ -473,6 +481,12 @@ const App = observer(() => {
               />
             </div>
             <div className="heart"> </div>
+          </div>
+          <div className="text">
+            Базовая цветовая модель - RGB. При конвертации в/из RGB может
+            происходить потеря точности при округлении. Дополнительно при
+            конвертации из XYZ/LAB в RGB может происходить искажение чисел, хотя
+            корректность отображения цвета остаётся правильной.
           </div>
           <HSVInputs />
           <HSLInputs />
